@@ -1,0 +1,6 @@
+.env*
+!.env.example
+
+.flaskenv*
+node_modules
+.DS_Store
