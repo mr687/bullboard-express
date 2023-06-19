@@ -6,6 +6,7 @@ const express = require("express");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
+const compression = require("compression");
 
 const Queue = require("bull");
 const { ExpressAdapter } = require("@bull-board/express");
@@ -80,11 +81,27 @@ async function main() {
 
 	const app = express();
 
-	app.use(helmet());
+	app.disable("x-powered-by");
+	app.use(
+		helmet({
+			// only allow methods that are needed
+			xPoweredBy: false,
+		})
+	);
 	app.use(cors());
+	app.use(compression());
 	app.use(morgan(isProduction ? "combined" : "dev"));
 	app.use(basicAuthMiddleware);
 	app.use(basePath, serverAdapter.getRouter());
+
+	app.use((_req, res, _next) => {
+		res.status(404).send("Sorry can't find that!");
+	});
+
+	app.use((err, _req, res, _next) => {
+		console.error(err.stack);
+		res.status(500).send("Something broke!");
+	});
 
 	const appPort = +(process.env.PORT || 3000);
 	app.listen(appPort, () => {
